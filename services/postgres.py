@@ -11,6 +11,13 @@ class PostgresDB:
         host: str = "localhost",
         port: int = 5432,
     ):
+        self.user = user
+        self.password = password
+        self.dbname = dbname
+        self.host = host
+        self.port = port
+        self.dbname = dbname
+
         self.conn = psycopg2.connect(
             dbname=dbname, user=user, password=password, host=host, port=port
         )
@@ -70,20 +77,7 @@ class PostgresDB:
         self.cursor.close()
         self.conn.close()
 
-    def setup(self, dbname: str, table_name: str, columns: list, types: list):
-        create_database_query = f"CREATE DATABASE IF NOT EXISTS {dbname};"
-        self.execute_query(create_database_query)
-
-        self.conn.close()
-        self.conn = psycopg2.connect(
-            dbname=dbname,
-            user=self.conn.user,
-            password=self.conn.password,
-            host=self.conn.host,
-            port=self.conn.port,
-        )
-        self.cursor = self.conn.cursor()
-
+    def setup(self, table_name: str, columns: list, types: list):
         if not table_exists(self, table_name):
             columns_str = ", ".join(
                 [f"{column} {type}" for column, type in zip(columns, types)]

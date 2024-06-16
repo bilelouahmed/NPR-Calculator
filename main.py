@@ -1,4 +1,6 @@
 import math
+import csv
+import io
 
 from models.expression import CalculatorEntry
 from services.postgres import PostgresDB
@@ -7,13 +9,14 @@ from controllers.calculator_entry import insert_entry
 import argparse
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 
 
 app = FastAPI()
 
-db = PostgresDB(host="0.0.0.0", dbname="calculator_db")
+db = PostgresDB(host="postgres")
 
 
 class ExpressionRequest(BaseModel):
@@ -126,6 +129,22 @@ def calculator(
     return fifo[0], classic_exp_fifo[0]
 
 
+@app.get("/get_calculations")
+async def get_calculations():
+    global db
+    result = db.read("calculator_entries", ["npr_expression", "expression", "result"])
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["npr_expression", "expression", "result"])
+    for entry in result:
+        print(entry)
+        writer.writerow([entry[0], entry[1], entry[2]])
+
+    output.seek(0)
+    return StreamingResponse(io.BytesIO(output.read().encode()), media_type="text/csv")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="API for a Reverse Polish Notation calculator."
@@ -143,6 +162,8 @@ if __name__ == "__main__":
 
     @app.post("/calculator")
     async def main(request: ExpressionRequest):
+        global db
+
         expression = request.expression
 
         if not expression:
@@ -157,7 +178,7 @@ if __name__ == "__main__":
                 detail="Bad Request : Please, check you typed well your fields (expression: str).",
             )
 
-        result, classic_expression = calculator(expression, verbose=VERBOSE)
+        result, classic_expression = calculator(db, expression, verbose=VERBOSE)
 
         return {"result": result, "expression": classic_expression}
 

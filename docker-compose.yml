@@ -1,22 +1,24 @@
 version: '3'
 services:
-  calculator:
-    build: .
-    ports:
-      - "6000:6000"
-    depends_on:
-      - postgres
-
   postgres:
     image: postgres:latest
     environment:
-      POSTGRES_DB: calculator_db
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: ["postgres", "-c", "log_statement=all"]
+
+  calculator:
+    build: .
+    ports:
+      - "6000:6000"
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
