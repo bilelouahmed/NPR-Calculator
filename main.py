@@ -1,5 +1,9 @@
 import math
 
+from models.expression import CalculatorEntry
+from services.postgres import PostgresDB
+from controllers.calculator_entry import insert_entry
+
 import argparse
 
 from fastapi import FastAPI, HTTPException
@@ -9,12 +13,16 @@ import uvicorn
 
 app = FastAPI()
 
+db = PostgresDB(host="0.0.0.0", dbname="calculator_db")
+
 
 class ExpressionRequest(BaseModel):
     expression: str
 
 
-def calculator(expression: str, verbose=False) -> tuple[float, str]:
+def calculator(
+    db: PostgresDB, expression: str, verbose: bool = False
+) -> tuple[float, str]:
     fifo = []
     classic_exp_fifo = []
 
@@ -107,6 +115,13 @@ def calculator(expression: str, verbose=False) -> tuple[float, str]:
             status_code=400,
             detail="Bad Request : The expression is not valid. It should normally contain only one element in the stack at the end.",
         )
+
+    insert_entry(
+        db,
+        CalculatorEntry(
+            NPR_expression=expression, expression=classic_exp_fifo[0], result=fifo[0]
+        ),
+    )
 
     return fifo[0], classic_exp_fifo[0]
 
