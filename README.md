@@ -22,7 +22,7 @@ A Reverse Polish Notation (RPN) calculator operates by evaluating mathematical e
 
 ```git clone https://github.com/bilelouahmed/npi-calculator.git```
 
-```cd npi-calculator```
+```cd NPR-Calculator```
 
 2. **Up the Docker containers :**
 
